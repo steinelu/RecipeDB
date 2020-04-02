@@ -15,49 +15,37 @@ import (
 //search
 
 func main() {
-	//TODO http://www.albertoleal.me/posts/golang-pipes.html
-	addRecipe()
-	mainSearch()
-}
-
-func mainSearch() {
-
 	if err := os.Setenv("RECIPE", "./test/"); err != nil {
 		handleError(err)
 	}
 	var path = flag.String("path", os.Getenv("RECIPE"), "path to recipe <RECIPE> database")
-
 	var markdown = flag.Bool("md", false, "outputs recipe as MarkDown into stdout")
 	var cli = flag.Bool("cli", false, "outputs recipe as string into stdout")
+	var add = flag.Bool("add-xml", false, "adding an recipe via a pipe!")
 
 	flag.Parse()
 
 	var db = XMLLazy{path: *path}
-	//createData(&db)
 	var se = InvertedIndexInMemory{}
-
 	db.Init()
 	se.Index(&db)
+	tail := flag.Args()
 
-	for recipe := range se.Search([]string{"tomate"}) {
-		if *markdown {
-			fmt.Println(recipe.toMarkdown())
-		} else if *cli {
-			fmt.Println(recipe.toCLIString())
+	if len(tail) > 0 { // searching
+		for recipe := range se.Search(tail) {
+			if *markdown {
+				fmt.Println(recipe.toMarkdown())
+			} else if *cli {
+				fmt.Println(recipe.toCLIString())
+			}
 		}
 	}
-}
-
-func addRecipe() {
-	if err := os.Setenv("RECIPE", "./test/"); err != nil {
-		handleError(err)
+	if *add {
+		x := shellPipeInput()
+		recipe := db.ParseXMLContent([]byte(x))
+		fmt.Println(recipe)
+		db.Add(recipe)
 	}
-	var path = flag.String("path", os.Getenv("RECIPE"), "path to recipe <RECIPE> database")
-	flag.Parse()
-	x := shellPipeInput()
-	var db = XMLLazy{path: *path}
-	recipe := db.ParseXMLContent([]byte(x))
-	fmt.Println(recipe.toMarkdown())
 }
 
 func shellPipeInput() string {
@@ -69,7 +57,6 @@ func shellPipeInput() string {
 		fmt.Println("Pipes!")
 		os.Exit(1)
 	}
-
 	reader := bufio.NewReader(os.Stdin)
 	var output []rune
 	for {
