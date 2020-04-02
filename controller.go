@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
+	"io"
+	"log"
 	"os"
 )
 
@@ -11,12 +14,9 @@ import (
 //var t = flag.Int("t", 0, "only results show with at least priority / start of t, default is 0")
 //search
 
-type options struct {
-	path string
-}
-
 func main() {
 	//TODO http://www.albertoleal.me/posts/golang-pipes.html
+	addRecipe()
 	mainSearch()
 }
 
@@ -26,6 +26,7 @@ func mainSearch() {
 		handleError(err)
 	}
 	var path = flag.String("path", os.Getenv("RECIPE"), "path to recipe <RECIPE> database")
+
 	var markdown = flag.Bool("md", false, "outputs recipe as MarkDown into stdout")
 	var cli = flag.Bool("cli", false, "outputs recipe as string into stdout")
 
@@ -47,7 +48,42 @@ func mainSearch() {
 	}
 }
 
-func createData(db DataBase) {
+func addRecipe() {
+	if err := os.Setenv("RECIPE", "./test/"); err != nil {
+		handleError(err)
+	}
+	var path = flag.String("path", os.Getenv("RECIPE"), "path to recipe <RECIPE> database")
+	flag.Parse()
+	x := shellPipeInput()
+	var db = XMLLazy{path: *path}
+	recipe := db.ParseXMLContent([]byte(x))
+	fmt.Println(recipe.toMarkdown())
+}
+
+func shellPipeInput() string {
+	info, err := os.Stdin.Stat()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if info.Mode()&os.ModeCharDevice != 0 || info.Size() <= 0 {
+		fmt.Println("Pipes!")
+		os.Exit(1)
+	}
+
+	reader := bufio.NewReader(os.Stdin)
+	var output []rune
+	for {
+		input, _, err := reader.ReadRune()
+		if err != nil && err == io.EOF {
+			break
+		}
+		output = append(output, input)
+	}
+	return string(output)
+}
+
+//CreateData
+/*func CreateData(db DataBase) {
 	db.Add(Recipe{Title: "Kartoffeln und Speck"})
 	db.Add(Recipe{Title: "Nudeln mit Sosse und Ei"})
 	db.Add(Recipe{Title: "Mehr mit Salz und Ei"})
@@ -62,3 +98,4 @@ func createData(db DataBase) {
 			{Name: "Milch", Amount: 750, Unit: "ml."},
 			{Name: "Butter", Amount: 1, Unit: "El."}}})
 }
+*/

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"math"
 	"runtime/debug"
 )
 
@@ -34,8 +35,18 @@ type Recipe struct {
 
 type Ingredient struct {
 	Name   string  `xml:",chardata"`
-	Amount float32 `xml:"amount,attr"`
+	Amount float64 `xml:"amount,attr"`
 	Unit   string  `xml:"unit,attr"`
+}
+
+func (ingredient Ingredient) getAmountUnit() string {
+	if ingredient.Amount == 0 {
+		return ""
+	}
+	if ingredient.Amount-math.Floor(ingredient.Amount) == 0 {
+		return fmt.Sprintf("%.0f %s ", ingredient.Amount, ingredient.Unit)
+	}
+	return fmt.Sprintf("%.3f %s ", ingredient.Amount, ingredient.Unit)
 }
 
 func (self Recipe) toMarkdown() string {
@@ -43,12 +54,10 @@ func (self Recipe) toMarkdown() string {
 	for _, step := range self.Preparation {
 		prep = prep + fmt.Sprintf("1. %s\n", step)
 	}
-
 	ingred := ""
 	for _, ingredient := range self.Ingredients {
-		ingred = ingred + fmt.Sprintf("* %d %s %s\n", ingredient.Amount, ingredient.Unit, ingredient.Name)
+		ingred = ingred + ingredient.getAmountUnit() + ingredient.Name + "\n"
 	}
-
 	return fmt.Sprintf("## %s\n### Preparation:\n%s\n\n### Ingredients:\n%s\n", self.Title, prep, ingred)
 }
 

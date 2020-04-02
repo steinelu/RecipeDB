@@ -11,15 +11,15 @@ type InvertedIndexInMemory struct {
 	db        DataBase
 }
 
-func (self *InvertedIndexInMemory) Index(base DataBase) {
-	self.db = base
-	self.index = make(map[string][]int)
-	self.idToTitle = make(map[int]string)
+func (iiMem *InvertedIndexInMemory) Index(base DataBase) {
+	iiMem.db = base
+	iiMem.index = make(map[string][]int)
+	iiMem.idToTitle = make(map[int]string)
 
-	for recipe := range self.db.Iterator() {
+	for recipe := range iiMem.db.Iterator() {
 		rid := rand.Int()
-		self.add(parseRecipe(recipe), rid)
-		self.idToTitle[rid] = recipe.Filename()
+		iiMem.add(parseRecipe(recipe), rid)
+		iiMem.idToTitle[rid] = recipe.Filename()
 	}
 }
 
@@ -35,26 +35,27 @@ func tokenize(token string) string {
 	return strings.ToLower(token)
 }
 
-func (self *InvertedIndexInMemory) add(terms []string, id int) {
+func (iiMem *InvertedIndexInMemory) add(terms []string, id int) {
 	for _, term := range terms {
-		self.index[term] = append(self.index[term], id)
+		iiMem.index[term] = append(iiMem.index[term], id)
 	}
 }
 
-func (self *InvertedIndexInMemory) Search(terms []string) <-chan Recipe {
+func (iiMem *InvertedIndexInMemory) Search(terms []string) <-chan Recipe {
 	// boolean retrival
-	res := self.index[terms[0]]
+	res := iiMem.index[terms[0]]
 
 	for _, term := range terms[0:] {
-		res = intersect(res, self.index[term])
+		res = intersect(res, iiMem.index[term])
 	}
 
-	recipes := []string{}
+	var recipes []string
+
 	for _, id := range res {
-		recipes = append(recipes, self.idToTitle[id])
+		recipes = append(recipes, iiMem.idToTitle[id])
 	}
 	//fmt.Println(recipes)
-	return self.db.Get(recipes)
+	return iiMem.db.Get(recipes)
 }
 
 func intersect(one []int, two []int) []int {
@@ -71,11 +72,4 @@ func intersect(one []int, two []int) []int {
 		}
 	}
 	return intersection
-}
-
-func max(x int, y int) int {
-	if x > y {
-		return x
-	}
-	return y
 }

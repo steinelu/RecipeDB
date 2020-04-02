@@ -11,51 +11,56 @@ type XMLLazy struct {
 	files []os.FileInfo
 }
 
-func (self *XMLLazy) Init() {
+func (xmlLazy *XMLLazy) Init() {
 	var err error
-	self.files, err = ioutil.ReadDir(self.path)
+	xmlLazy.files, err = ioutil.ReadDir(xmlLazy.path)
 	if err != nil {
 		handleError(err)
 	}
 }
 
-func (self XMLLazy) Add(recipe Recipe) {
+func (xmlLazy XMLLazy) Add(recipe Recipe) {
 	content, err := xml.MarshalIndent(recipe, "", "	")
 	if err != nil {
 		handleError(err)
 	}
-	err = ioutil.WriteFile(self.path+recipe.Title+".xml", content, 0644)
+	err = ioutil.WriteFile(xmlLazy.path+recipe.Title+".xml", content, 0644)
 	if err != nil {
 		handleError(err)
 	}
 }
 
-func (self XMLLazy) Iterator() <-chan Recipe {
-	filenames := []string{}
-	for _, file := range self.files {
+func (xmlLazy XMLLazy) Iterator() <-chan Recipe {
+	var filenames []string
+	for _, file := range xmlLazy.files {
 		filenames = append(filenames, file.Name())
 	}
-	return self.Get(filenames)
+	return xmlLazy.Get(filenames)
 }
 
-func (self XMLLazy) Get(filenames []string) <-chan Recipe {
+func (xmlLazy XMLLazy) Get(filenames []string) <-chan Recipe {
 	ch := make(chan Recipe)
 	go func() {
 		defer close(ch)
 		for _, fname := range filenames {
-			recipe := Recipe{}
-			content, err := ioutil.ReadFile(self.path + fname)
+			content, err := ioutil.ReadFile(xmlLazy.path + fname)
 
 			if err != nil {
 				handleError(err)
 			}
 
-			if err := xml.Unmarshal(content, &recipe); err != nil {
-				handleError(err)
-			}
+			recipe := xmlLazy.ParseXMLContent(content)
 			recipe.SetFilename(fname)
 			ch <- recipe
 		}
 	}()
 	return ch
+}
+
+func (xmlLazy XMLLazy) ParseXMLContent(content []byte) Recipe {
+	recipe := Recipe{}
+	if err := xml.Unmarshal(content, &recipe); err != nil {
+		handleError(err)
+	}
+	return recipe
 }
