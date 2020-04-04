@@ -9,38 +9,57 @@ import (
 	"os"
 )
 
-//var path = flag.String("path", os.Getenv("RECIPE"), "path to recipe <RECIPE> database")
-//var n = flag.Int("n", 5, "number of results shown")
-//var t = flag.Int("t", 0, "only results show with at least priority / start of t, default is 0")
-//search
+type Options struct {
+	path     string
+	markdown bool
+	cli      bool
+	add      bool
+	tail     []string
+}
+
+var arguments Options
+
+func getOptions() {
+	arguments.path = *flag.String("path", os.Getenv("RECIPE"), "path to recipe <RECIPE> database")
+	arguments.markdown = *flag.Bool("md", false, "outputs recipe as MarkDown into stdout")
+	arguments.cli = *flag.Bool("cli", false, "outputs recipe as string into stdout")
+	arguments.add = *flag.Bool("add-xml", false, "adding an recipe via a pipe!")
+	arguments.tail = flag.Args()
+	flag.Parse()
+}
+
+func setDefaultPath() {
+	if len(os.Getenv("RECIPE")) <= 0 {
+		if err := os.Setenv("RECIPE", "./test/"); err != nil {
+			handleError(err)
+		}
+	}
+}
 
 func main() {
-	if err := os.Setenv("RECIPE", "./test/"); err != nil {
-		handleError(err)
-	}
-	var path = flag.String("path", os.Getenv("RECIPE"), "path to recipe <RECIPE> database")
-	var markdown = flag.Bool("md", false, "outputs recipe as MarkDown into stdout")
-	var cli = flag.Bool("cli", false, "outputs recipe as string into stdout")
-	var add = flag.Bool("add-xml", false, "adding an recipe via a pipe!")
 
-	flag.Parse()
+	setDefaultPath()
+	getOptions()
 
-	var db = XMLLazy{path: *path}
+	fmt.Println(arguments.path, len(arguments.path))
+	var db = XMLLazy{path: arguments.path}
 	var se = InvertedIndexInMemory{}
 	db.Init()
 	se.Index(&db)
-	tail := flag.Args()
 
-	if len(tail) > 0 { // searching
-		for recipe := range se.Search(tail) {
-			if *markdown {
+	if len(arguments.tail) > 0 { // searching
+		for recipe := range se.Search(arguments.tail) {
+			if arguments.markdown {
 				fmt.Println(recipe.toMarkdown())
-			} else if *cli {
+			} else if arguments.cli {
 				fmt.Println(recipe.toCLIString())
+			} else {
+				fmt.Println(recipe.Title)
 			}
 		}
 	}
-	if *add {
+
+	if arguments.add {
 		x := shellPipeInput()
 		recipe := db.ParseXMLContent([]byte(x))
 		fmt.Println(recipe)
