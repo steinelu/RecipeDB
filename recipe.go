@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha1"
 	"fmt"
 	"log"
 	"math"
@@ -26,8 +27,7 @@ type DataBase interface {
 }
 
 type Recipe struct {
-	filename    string
-	id          int
+	//filename    string
 	Title       string       `xml:"title"`
 	Ingredients []Ingredient `xml:"ingredients>ingredient"`
 	Preparation []string     `xml:"preparation>step"` // TODO saving order of steps
@@ -69,16 +69,15 @@ func (self Recipe) toCLIString() string {
 
 	ingred := ""
 	for _, ingredient := range self.Ingredients {
-		ingred = ingred + fmt.Sprintf(" - %d %s %s\n", ingredient.Amount, ingredient.Unit, ingredient.Name)
+		ingred = ingred + fmt.Sprintf(" - %f %s %s\n", ingredient.Amount, ingredient.Unit, ingredient.Name)
 	}
 
 	return fmt.Sprintf("%s\nPreparation:\n%s\nIngredients:\n%s\n", self.Title, prep, ingred)
 }
 
-func (self Recipe) Filename() string {
-	return self.filename
-}
-
-func (self *Recipe) SetFilename(name string) {
-	self.filename = name
+func (self *Recipe) GetId() string {
+	h := sha1.New()
+	hash := fmt.Sprintf("%v", self)
+	h.Write([]byte(hash))
+	return fmt.Sprintf("%x", h.Sum(nil))
 }

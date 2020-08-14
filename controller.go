@@ -9,22 +9,16 @@ import (
 	"os"
 )
 
-type Options struct {
-	path     string
-	markdown bool
-	cli      bool
-	add      bool
-	tail     []string
-}
-
-var arguments Options
+var markdown *bool
+var cli *bool
+var path *string
+var adding *bool
 
 func getOptions() {
-	arguments.path = *flag.String("path", os.Getenv("RECIPE"), "path to recipe <RECIPE> database")
-	arguments.markdown = *flag.Bool("md", false, "outputs recipe as MarkDown into stdout")
-	arguments.cli = *flag.Bool("cli", false, "outputs recipe as string into stdout")
-	arguments.add = *flag.Bool("add-xml", false, "adding an recipe via a pipe!")
-	arguments.tail = flag.Args()
+	path = flag.String("path", os.Getenv("RECIPE"), "path to recipe <RECIPE> database")
+	markdown = flag.Bool("md", false, "outputs recipe as MarkDown into stdout")
+	cli = flag.Bool("cli", false, "outputs recipe as string into stdout")
+	adding = flag.Bool("add-xml", false, "adding an recipe via a pipe!")
 	flag.Parse()
 }
 
@@ -37,34 +31,41 @@ func setDefaultPath() {
 }
 
 func main() {
-
 	setDefaultPath()
 	getOptions()
 
-	fmt.Println(arguments.path, len(arguments.path))
-	var db = XMLLazy{path: arguments.path}
+	//fmt.Println(arguments.path, len(arguments.path))
+	var db = XMLLazy{path: *path}
 	var se = InvertedIndexInMemory{}
 	db.Init()
 	se.Index(&db)
 
-	if len(arguments.tail) > 0 { // searching
-		for recipe := range se.Search(arguments.tail) {
-			if arguments.markdown {
-				fmt.Println(recipe.toMarkdown())
-			} else if arguments.cli {
-				fmt.Println(recipe.toCLIString())
-			} else {
-				fmt.Println(recipe.Title)
-			}
-		}
+	if len(flag.Args()) > 0 { // searching
+		handleSearchResults(se.Search(flag.Args()))
 	}
 
-	if arguments.add {
-		x := shellPipeInput()
-		recipe := db.ParseXMLContent([]byte(x))
-		fmt.Println(recipe)
-		db.Add(recipe)
+	if *adding {
+		handleAddRecipe(db)
 	}
+}
+
+func handleSearchResults(recipes <-chan Recipe) {
+	for recipe := range recipes {
+		if *markdown {
+			fmt.Println(recipe.toMarkdown())
+		} else if *cli {
+			fmt.Println(recipe.toCLIString())
+		} else {
+			fmt.Println(recipe.GetId(), ":", recipe.Title)
+		}
+	}
+}
+
+func handleAddRecipe(db XMLLazy) {
+	x := shellPipeInput()
+	recipe := db.ParseXMLContent([]byte(x))
+	//fmt.Println(recipe)
+	db.Add(recipe)
 }
 
 func shellPipeInput() string {

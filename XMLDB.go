@@ -24,7 +24,11 @@ func (xmlLazy XMLLazy) Add(recipe Recipe) {
 	if err != nil {
 		handleError(err)
 	}
-	err = ioutil.WriteFile(xmlLazy.path+recipe.Title+".xml", content, 0644)
+	//err = ioutil.WriteFile(xmlLazy.path+recipe.Title+".xml", content, 0644)
+	p := xmlLazy.path + recipe.GetId() + ".xml"
+
+	//TODO check if checksum is already in use
+	err = ioutil.WriteFile(p, content, 0644)
 	if err != nil {
 		handleError(err)
 	}
@@ -50,7 +54,6 @@ func (xmlLazy XMLLazy) Get(filenames []string) <-chan Recipe {
 			}
 
 			recipe := xmlLazy.ParseXMLContent(content)
-			recipe.SetFilename(fname)
 			ch <- recipe
 		}
 	}()
@@ -59,6 +62,7 @@ func (xmlLazy XMLLazy) Get(filenames []string) <-chan Recipe {
 
 func (xmlLazy XMLLazy) ParseXMLContent(content []byte) Recipe {
 	recipe := Recipe{}
+	//fmt.Printf("%s", content)
 	if err := xml.Unmarshal(content, &recipe); err != nil {
 		handleError(err)
 	}

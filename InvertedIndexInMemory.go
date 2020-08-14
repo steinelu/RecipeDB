@@ -1,26 +1,24 @@
 package main
 
 import (
-	"math/rand"
 	"strings"
 )
 
 type InvertedIndexInMemory struct {
-	index     map[string][]int
-	idToTitle map[int]string
-	db        DataBase
+	index map[string][]string
+	//idToTitle map[int]string
+	db DataBase
 }
 
 func (iiMem *InvertedIndexInMemory) Index(base DataBase) {
 	iiMem.db = base
-	iiMem.index = make(map[string][]int)
-	iiMem.idToTitle = make(map[int]string)
+	iiMem.index = make(map[string][]string)
 
 	for recipe := range iiMem.db.Iterator() {
-		rid := rand.Int()
-		iiMem.add(parseRecipe(recipe), rid)
-		iiMem.idToTitle[rid] = recipe.Filename()
+		iiMem.add(parseRecipe(recipe), recipe.GetId())
 	}
+
+	//iiMem.index = iiMem.indexBuild.
 }
 
 func parseRecipe(recipe Recipe) []string {
@@ -35,24 +33,28 @@ func tokenize(token string) string {
 	return strings.ToLower(token)
 }
 
-func (iiMem *InvertedIndexInMemory) add(terms []string, id int) {
+func (iiMem *InvertedIndexInMemory) add(terms []string, recipe_hash string) {
 	for _, term := range terms {
-		iiMem.index[term] = append(iiMem.index[term], id)
+		//TODO insert into slice as heap, instead of append to list
+		iiMem.index[term] = append(iiMem.index[term], recipe_hash)
 	}
 }
 
 func (iiMem *InvertedIndexInMemory) Search(terms []string) <-chan Recipe {
 	// boolean retrival
-	res := iiMem.index[terms[0]]
+	//res := iiMem.index[terms[0]]
 
-	for _, term := range terms[0:] {
-		res = intersect(res, iiMem.index[term])
+	//for _, term := range terms[0:] {
+	//	res = intersect(res, iiMem.index[term])
+	//}
+	res := []string{}
+	for _, term := range terms {
+		res = append(res, iiMem.index[term]...)
 	}
-
 	var recipes []string
 
-	for _, id := range res {
-		recipes = append(recipes, iiMem.idToTitle[id])
+	for _, hash := range res {
+		recipes = append(recipes, hash+".xml")
 	}
 	//fmt.Println(recipes)
 	return iiMem.db.Get(recipes)
