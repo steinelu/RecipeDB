@@ -1,24 +1,41 @@
 package main
 
 import (
+	"container/heap"
 	"strings"
 )
 
+type StringHeap []string
+
+func (h StringHeap) Len() int           { return len(h) }
+func (h StringHeap) Less(i, j int) bool { return h[i] < h[j] }
+func (h StringHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+
+func (h *StringHeap) Push(x interface{}) {
+	*h = append(*h, x.(string))
+}
+
+func (h *StringHeap) Pop() interface{} {
+	old := *h
+	n := len(old)
+	x := old[n-1]
+	*h = old[0 : n-1]
+	return x
+}
+
 type InvertedIndexInMemory struct {
-	index map[string][]string
-	//idToTitle map[int]string
-	db DataBase
+	//index map[string][]string
+	index_ map[string]*StringHeap
+	db     DataBase
 }
 
 func (iiMem *InvertedIndexInMemory) Index(base DataBase) {
 	iiMem.db = base
-	iiMem.index = make(map[string][]string)
+	iiMem.index_ = make(map[string]*StringHeap)
 
 	for recipe := range iiMem.db.Iterator() {
 		iiMem.add(parseRecipe(recipe), recipe.GetId())
 	}
-
-	//iiMem.index = iiMem.indexBuild.
 }
 
 func parseRecipe(recipe Recipe) []string {
@@ -35,24 +52,33 @@ func tokenize(token string) string {
 
 func (iiMem *InvertedIndexInMemory) add(terms []string, recipe_hash string) {
 	for _, term := range terms {
-		//TODO insert into slice as heap, instead of append to list
-		iiMem.index[term] = append(iiMem.index[term], recipe_hash)
+
+		if iiMem.index_[term] == nil {
+			iiMem.index_[term] = &StringHeap{}
+			heap.Init(iiMem.index_[term])
+		}
+
+		heap.Push(iiMem.index_[term], recipe_hash)
 	}
 }
 
 func (iiMem *InvertedIndexInMemory) Search(terms []string) <-chan Recipe {
 	// boolean retrival
-	//res := iiMem.index[terms[0]]
+	res := *iiMem.index_[terms[0]]
 
-	//for _, term := range terms[0:] {
-	//	res = intersect(res, iiMem.index[term])
-	//}
-	res := []string{}
-	for _, term := range terms {
-		res = append(res, iiMem.index[term]...)
+	for _, term := range terms[0:] {
+		res = *intersect(res, *iiMem.index_[term])
 	}
-	var recipes []string
+	/*
+		for _, term := range terms[0:] {
+			res = intersect(res, iiMem.index_[term])
+		}
+		//res := []StringHeap{}
+		for _, term := range terms {
+			res = append(res, iiMem.index_[term].(StringHeap))
+		}*/
 
+	var recipes []string
 	for _, hash := range res {
 		recipes = append(recipes, hash+".xml")
 	}
@@ -60,8 +86,9 @@ func (iiMem *InvertedIndexInMemory) Search(terms []string) <-chan Recipe {
 	return iiMem.db.Get(recipes)
 }
 
-func intersect(one []int, two []int) []int {
-	var intersection []int
+func intersect(one []string, two []string) *StringHeap {
+	//var intersection []string
+	intersection := StringHeap{}
 	for i, j := 0, 0; i < len(one) && j < len(two); {
 		if one[i] < two[j] {
 			i++
@@ -73,5 +100,5 @@ func intersect(one []int, two []int) []int {
 			j++
 		}
 	}
-	return intersection
+	return &intersection
 }
