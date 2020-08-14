@@ -5,26 +5,7 @@ import (
 	"strings"
 )
 
-type StringHeap []string
-
-func (h StringHeap) Len() int           { return len(h) }
-func (h StringHeap) Less(i, j int) bool { return h[i] < h[j] }
-func (h StringHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
-
-func (h *StringHeap) Push(x interface{}) {
-	*h = append(*h, x.(string))
-}
-
-func (h *StringHeap) Pop() interface{} {
-	old := *h
-	n := len(old)
-	x := old[n-1]
-	*h = old[0 : n-1]
-	return x
-}
-
 type InvertedIndexInMemory struct {
-	//index map[string][]string
 	index_ map[string]*StringHeap
 	db     DataBase
 }
@@ -42,6 +23,12 @@ func parseRecipe(recipe Recipe) []string {
 	var tokens []string
 	for _, tok := range strings.Fields(recipe.Title) {
 		tokens = append(tokens, tokenize(tok))
+	}
+
+	for _, ingredient := range recipe.Ingredients {
+		for _, tok := range strings.Fields(ingredient.Name) {
+			tokens = append(tokens, tokenize(tok))
+		}
 	}
 	return tokens
 }
@@ -62,6 +49,16 @@ func (iiMem *InvertedIndexInMemory) add(terms []string, recipe_hash string) {
 	}
 }
 
+func unique(list []string) []string {
+	uniq := []string{list[0]}
+	for _, elem := range list {
+		if elem != uniq[len(uniq)-1] {
+			uniq = append(uniq, elem)
+		}
+	}
+	return uniq
+}
+
 func (iiMem *InvertedIndexInMemory) Search(terms []string) <-chan Recipe {
 	// boolean retrival
 	res := *iiMem.index_[terms[0]]
@@ -69,25 +66,16 @@ func (iiMem *InvertedIndexInMemory) Search(terms []string) <-chan Recipe {
 	for _, term := range terms[0:] {
 		res = *intersect(res, *iiMem.index_[term])
 	}
-	/*
-		for _, term := range terms[0:] {
-			res = intersect(res, iiMem.index_[term])
-		}
-		//res := []StringHeap{}
-		for _, term := range terms {
-			res = append(res, iiMem.index_[term].(StringHeap))
-		}*/
 
 	var recipes []string
-	for _, hash := range res {
+	for _, hash := range unique(res) {
 		recipes = append(recipes, hash+".xml")
 	}
-	//fmt.Println(recipes)
+
 	return iiMem.db.Get(recipes)
 }
 
 func intersect(one []string, two []string) *StringHeap {
-	//var intersection []string
 	intersection := StringHeap{}
 	for i, j := 0, 0; i < len(one) && j < len(two); {
 		if one[i] < two[j] {
@@ -101,4 +89,22 @@ func intersect(one []string, two []string) *StringHeap {
 		}
 	}
 	return &intersection
+}
+
+type StringHeap []string
+
+func (h StringHeap) Len() int           { return len(h) }
+func (h StringHeap) Less(i, j int) bool { return h[i] < h[j] }
+func (h StringHeap) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
+
+func (h *StringHeap) Push(x interface{}) {
+	*h = append(*h, x.(string))
+}
+
+func (h *StringHeap) Pop() interface{} {
+	old := *h
+	n := len(old)
+	x := old[n-1]
+	*h = old[0 : n-1]
+	return x
 }
