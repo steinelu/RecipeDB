@@ -62,7 +62,6 @@ func (xmlLazy XMLLazy) Get(filenames []string) <-chan Recipe {
 
 func (xmlLazy XMLLazy) ParseXMLContent(content []byte) Recipe {
 	recipe := Recipe{}
-	//fmt.Printf("%s", content)
 	if err := xml.Unmarshal(content, &recipe); err != nil {
 		handleError(err)
 	}

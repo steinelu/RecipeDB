@@ -39,7 +39,6 @@ func tokenize(token string) string {
 
 func (iiMem *InvertedIndexInMemory) add(terms []string, recipe_hash string) {
 	for _, term := range terms {
-
 		if iiMem.index_[term] == nil {
 			iiMem.index_[term] = &StringHeap{}
 			heap.Init(iiMem.index_[term])
@@ -66,7 +65,7 @@ func (iiMem *InvertedIndexInMemory) Search(terms []string) <-chan Recipe {
 	for _, term := range terms[0:] {
 		res = *intersect(res, *iiMem.index_[term])
 	}
-
+	//fmt.Println(res)
 	var recipes []string
 	for _, hash := range unique(res) {
 		recipes = append(recipes, hash+".xml")
