@@ -35,7 +35,7 @@ def toXML(recipe):
     ing = "\n".join([f'\t\t<ingredient amount="{vals[0]}" unit="{vals[1]}">{name}</ingredient>' for name, vals in recipe["ingredients"].items()])
     pre = "\n".join([f'\t\t<step>{step}</step>' for step in recipe["preparation"]])
     xml = f"""
-<Recipe>
+<recipe>
     <title>{recipe["title"]}</title>
     <ingredients>
 {ing}
@@ -43,7 +43,7 @@ def toXML(recipe):
     <preparation>
 {pre}
     </preparation>
-</Recipe>
+</recipe>
 """.strip()
     return xml
 
@@ -58,4 +58,4 @@ if __name__ == "__main__":
     
     parseLocalHTML(sys.argv[1])
 
-    print(toXML(recipe))
+    print(toXML(recipe), encoding="utf-8")

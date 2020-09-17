@@ -22,8 +22,9 @@ type SearchEngine interface {
 type DataBase interface {
 	Init()
 	Add(Recipe)
-	Iterator() <-chan Recipe
+	Iterator(func(Recipe, []byte))
 	Get([]string) <-chan Recipe
+	Close()
 }
 
 type Recipe struct {

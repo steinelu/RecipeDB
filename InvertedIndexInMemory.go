@@ -14,9 +14,13 @@ func (iiMem *InvertedIndexInMemory) Index(base DataBase) {
 	iiMem.db = base
 	iiMem.index_ = make(map[string]*StringHeap)
 
-	for recipe := range iiMem.db.Iterator() {
-		iiMem.add(parseRecipe(recipe), recipe.GetId())
-	}
+	iiMem.db.Iterator(func(recipe Recipe, id []byte){
+		iiMem.add(parseRecipe(recipe), id)
+	})
+
+	//for recipe := range iiMem.db.Iterator() {
+	//	iiMem.add(parseRecipe(recipe), recipe.GetId())
+	//}
 }
 
 func parseRecipe(recipe Recipe) []string {
@@ -37,14 +41,14 @@ func tokenize(token string) string {
 	return strings.ToLower(token)
 }
 
-func (iiMem *InvertedIndexInMemory) add(terms []string, recipe_hash string) {
+func (iiMem *InvertedIndexInMemory) add(terms []string, id []byte) {
 	for _, term := range terms {
 		if iiMem.index_[term] == nil {
 			iiMem.index_[term] = &StringHeap{}
 			heap.Init(iiMem.index_[term])
 		}
 
-		heap.Push(iiMem.index_[term], recipe_hash)
+		heap.Push(iiMem.index_[term], string(id))
 	}
 }
 
@@ -61,14 +65,13 @@ func unique(list []string) []string {
 func (iiMem *InvertedIndexInMemory) Search(terms []string) <-chan Recipe {
 	// boolean retrival
 	res := *iiMem.index_[terms[0]]
-
 	for _, term := range terms[0:] {
 		res = *intersect(res, *iiMem.index_[term])
 	}
 	//fmt.Println(res)
 	var recipes []string
-	for _, hash := range unique(res) {
-		recipes = append(recipes, hash+".xml")
+	for _, id := range unique(res) {
+		recipes = append(recipes, id)
 	}
 
 	return iiMem.db.Get(recipes)
