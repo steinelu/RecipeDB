@@ -8,14 +8,16 @@ recipe = {}
 def getHTMLFromWebsiteChromium(url):
     cmd = f"chromium --headless --disable-gpu {url}".split(" ")
     return subprocess.run(cmd)
-    
-def parseLocalHTML(html):
-    with open(html) as html_:
-        soup = BeautifulSoup(html_.read(), "html.parser")
-        
-        recipe["title"] = soup.h1.string.strip()
-        parsePreparation(soup)
-        parseIngredients(soup)
+
+def parseHTML(html):
+    soup = BeautifulSoup(html.read(), "html.parser")
+    recipe["title"] = soup.h1.string.strip()
+    parsePreparation(soup)
+    parseIngredients(soup)
+
+def parseLocalHTML(path_html):
+    with open(path_html) as html_:
+        parseHTML(html_)
 
 def parsePreparation(html):
     prep = html.find("ol", "recipe-preparation").find_all("p")
@@ -48,14 +50,16 @@ def toXML(recipe):
     return xml
 
 
-
 if __name__ == "__main__":
-
-    if len(sys.argv) != 2:
+    if len(sys.argv) == 1:
+        parseHTML(sys.stdin)
+    elif len(sys.argv) == 2:
+        parseLocalHTML(sys.argv[1])
+    else:
         print("error")
         exit(-1)
     #print(getHTMLFromWebsiteChromium(sys.argv[1]))
     
-    parseLocalHTML(sys.argv[1])
+    
 
     print(toXML(recipe))
