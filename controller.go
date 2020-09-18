@@ -19,7 +19,7 @@ func getOptions() {
 	markdown = flag.Bool("md", false, "outputs recipe as MarkDown into stdout")
 	cli = flag.Bool("cli", false, "outputs recipe as string into stdout")
 	//adding = flag.Bool("add-xml", false, "adding an recipe via a pipe!")
-	adding = flag.String("add-xmlRecipe", "", "path to xml file of the recipe")
+	adding = flag.String("add-recipe-xml", "", "path to xml file of the recipe")
 	flag.Parse()
 }
 
@@ -40,14 +40,13 @@ func main() {
 	var se = InvertedIndexInMemory{}
 
 	db.Init()
-	se.Index(&db)
+
 
 	if len(flag.Args()) > 0 { // searching
+		se.Index(&db)
 		res := se.Search(flag.Args())
 		handleSearchResults(res)
-	}
-
-	if len(*adding) > 0 {
+	} else if len(*adding) > 0 {
 		file, err := os.Open(*adding)
 		if err != nil {
 			log.Fatal(err)
@@ -57,7 +56,6 @@ func main() {
 		if err != nil {
 			handleError(err)
 		}
-
 		db.Add(UnmarschalXMLRecipe(content))
 	}
 }

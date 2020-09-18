@@ -16,6 +16,7 @@ func (iiMem *InvertedIndexInMemory) Index(base DataBase) {
 
 	iiMem.db.Iterator(func(recipe Recipe, id []byte){
 		iiMem.add(parseRecipe(recipe), id)
+		//fmt.Println(recipe.Title)
 	})
 
 	//for recipe := range iiMem.db.Iterator() {
@@ -64,28 +65,36 @@ func unique(list []string) []string {
 
 func (iiMem *InvertedIndexInMemory) Search(terms []string) <-chan Recipe {
 	// boolean retrival
-	res := *iiMem.index_[terms[0]]
-	for _, term := range terms[0:] {
-		res = *intersect(res, *iiMem.index_[term])
-	}
-	//fmt.Println(res)
-	var recipes []string
-	for _, id := range unique(res) {
-		recipes = append(recipes, id)
+	//var recipes []string
+	var res *StringHeap
+
+	res, ok := (*iiMem).index_[terms[0]]
+	if !ok {
+		return iiMem.db.Get([]string{})
 	}
 
-	return iiMem.db.Get(recipes)
+	for _, term := range terms[0:] {
+		res = intersect(res, iiMem.index_[term])
+	}
+
+	return iiMem.db.Get(*res)
 }
 
-func intersect(one []string, two []string) *StringHeap {
+func intersect(one *StringHeap, two *StringHeap) *StringHeap {
+	if one == nil || two == nil {
+		return &StringHeap{}
+	}
+	if len(*one) <= 0 || len(*two) <= 0 {
+		return &StringHeap{}
+	}
 	intersection := StringHeap{}
-	for i, j := 0, 0; i < len(one) && j < len(two); {
-		if one[i] < two[j] {
+	for i, j := 0, 0; i < len(*one) && j < len(*two); {
+		if string((*one)[i]) < string((*two)[j]) {
 			i++
-		} else if one[i] > two[j] {
+		} else if (*one)[i] > (*two)[j] {
 			j++
 		} else {
-			intersection = append(intersection, one[i])
+			intersection = append(intersection, (*one)[i])
 			i++
 			j++
 		}

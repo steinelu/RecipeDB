@@ -78,7 +78,6 @@ func (db *boltdb) Get(keys []string) <- chan Recipe{
 	recipes := make(chan Recipe)
 	go func(){
 		for _, key := range keys{
-			fmt.Println(key)
 			recipes <- db.get([]byte(key))
 		}
 		defer close(recipes)
