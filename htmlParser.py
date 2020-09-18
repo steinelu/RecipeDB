@@ -32,7 +32,7 @@ def parseIngredients(html):
     recipe["ingredients"] = {n:a.split() if len(a.split()) > 1 else ["", ""] for n, a in zip(name, amount)}
 
 def toXML(recipe):
-    ing = "\n".join([f'\t\t<ingredient amount="{vals[0]}" unit="{vals[1]}">{name}</ingredient>' for name, vals in recipe["ingredients"].items()])
+    ing = "\n".join([f'\t\t<ingredient amount="{vals[0].replace(",", ".")}" unit="{vals[1]}">{name}</ingredient>' for name, vals in recipe["ingredients"].items()])
     pre = "\n".join([f'\t\t<step>{step}</step>' for step in recipe["preparation"]])
     xml = f"""
 <recipe>
@@ -58,4 +58,4 @@ if __name__ == "__main__":
     
     parseLocalHTML(sys.argv[1])
 
-    print(toXML(recipe), encoding="utf-8")
+    print(toXML(recipe))
