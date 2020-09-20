@@ -1,28 +1,10 @@
 package main
 
 import (
-	"encoding/xml"
 	"fmt"
 	bolt "go.etcd.io/bbolt"
 	"log"
 )
-
-
-func UnmarschalXMLRecipe(content []byte) Recipe {
-	recipe := Recipe{}
-	if err := xml.Unmarshal(content, &recipe); err != nil {
-		handleError(err)
-	}
-	return recipe
-}
-
-func MarschalXMLRecipe(recipe Recipe) []byte{
-	content, err := xml.MarshalIndent(recipe, "", "	")
-	if err != nil {
-		handleError(err)
-	}
-	return content
-}
 
 type boltdb struct{
 	path string

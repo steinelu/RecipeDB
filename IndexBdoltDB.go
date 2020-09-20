@@ -102,19 +102,6 @@ func (index *Index) Search(terms []string) <- chan Recipe{
 }
 
 
-func parseRecipe(recipe Recipe) []string {
-	var tokens []string
-	for _, tok := range strings.Fields(recipe.Title) {
-		tokens = append(tokens, tokenize(tok))
-	}
-
-	for _, ingredient := range recipe.Ingredients {
-		for _, tok := range strings.Fields(ingredient.Name) {
-			tokens = append(tokens, tokenize(tok))
-		}
-	}
-	return tokens
-}
 
 func (index *Index) Close(){
 	if index.db != nil{
@@ -160,6 +147,3 @@ func intersect(one []string, two []string) []string {
 	return intersection
 }
 
-func tokenize(token string) string {
-	return strings.ToLower(token)
-}

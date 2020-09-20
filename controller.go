@@ -13,6 +13,7 @@ var cli *bool
 var path *string
 //var adding *bool
 var adding *string
+var addingJSON *string
 
 func getOptions() {
 	path = flag.String("path", os.Getenv("RECIPE"), "path to recipe <RECIPE> database")
@@ -20,6 +21,7 @@ func getOptions() {
 	cli = flag.Bool("cli", false, "outputs recipe as string into stdout")
 	//adding = flag.Bool("add-xml", false, "adding an recipe via a pipe!")
 	adding = flag.String("add-recipe-xml", "", "path to xml file of the recipe")
+	addingJSON = flag.String("add-recipe-json", "", "path to json file of the recipe")
 	flag.Parse()
 }
 
