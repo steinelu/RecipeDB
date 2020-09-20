@@ -6,22 +6,24 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
+	"path/filepath"
+	"strings"
 )
 
 var markdown *bool
 var cli *bool
-var path *string
-//var adding *bool
-var adding *string
-var addingJSON *string
+var dbPath *string
+var add *string
+var bulkload *string
 
 func getOptions() {
-	path = flag.String("path", os.Getenv("RECIPE"), "path to recipe <RECIPE> database")
+	dbPath = flag.String("path", os.Getenv("RECIPE"), "path to recipe <RECIPE> database")
 	markdown = flag.Bool("md", false, "outputs recipe as MarkDown into stdout")
 	cli = flag.Bool("cli", false, "outputs recipe as string into stdout")
 	//adding = flag.Bool("add-xml", false, "adding an recipe via a pipe!")
-	adding = flag.String("add-recipe-xml", "", "path to xml file of the recipe")
-	addingJSON = flag.String("add-recipe-json", "", "path to json file of the recipe")
+	add = flag.String("add", "", "path to recipe file")
+	bulkload = flag.String("load", "", "path to directory with xml/json files")
 	flag.Parse()
 }
 
@@ -37,14 +39,16 @@ func main() {
 	setDefaultPath()
 	getOptions()
 
-	var db = boltdb{path: *path}
+	var db = boltdb{path: *dbPath}
 	var se = Index{}
 
 	db.Init()
 	se.Init(&db)
 
-	if len(*adding) > 0 {
-		recipe := getFileContent(*adding)
+	if len(*bulkload) > 0 {
+		loadBulkFiles(db, se, filepath.ToSlash(*bulkload))
+	} else if len(*add) > 0 {
+		recipe := loadSingleFile(*add)
 		db.Add(recipe)
 		se.Index(recipe)
 	} else if len(flag.Args()) > 0 { // Searching
@@ -70,7 +74,7 @@ func handleSearchResults(recipes <-chan Recipe) {
 	}
 }
 
-func getFileContent(path string) Recipe{
+func getFileContent(path string) []byte{
 	file, err := os.Open(path)
 	if err != nil {
 		log.Fatal(err)
@@ -80,5 +84,31 @@ func getFileContent(path string) Recipe{
 	if err != nil {
 		handleError(err)
 	}
-	return UnmarschalXMLRecipe(content)
+	return content
+}
+
+func loadSingleFile(file string) Recipe{
+	var recipe Recipe
+	ext := path.Ext(file)
+	content := getFileContent(file)
+	if strings.ToLower(ext) == ".xml" {
+		recipe = UnmarschalXMLRecipe(content)
+	} else if strings.ToLower(ext) == ".json" {
+		recipe = UnmarschalJSONRecipe(content)
+	} else {
+		fmt.Println("not a supported file format (extension) of ", file)
+	}
+	return recipe
+}
+
+func loadBulkFiles(db boltdb, se Index, dir string){
+	entries, err := ioutil.ReadDir(dir)
+	if err != nil{
+		log.Fatal(err)
+	}
+	for _, file := range entries{
+		recipe := loadSingleFile(dir + file.Name())
+		db.Add(recipe)
+		se.Index(recipe)
+	}
 }
