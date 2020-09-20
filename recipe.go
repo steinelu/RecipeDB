@@ -31,15 +31,16 @@ type DataBase interface {
 
 type Recipe struct {
 	//filename    string
-	Title       string       `xml:"title"`
-	Ingredients []Ingredient `xml:"ingredients>ingredient"`
-	Preparation []string     `xml:"preparation>step"` // TODO saving order of steps
+	Source 		string		 `xml:"href,attr" json:"href"`
+	Title       string       `xml:"title" json:"title"`
+	Ingredients []Ingredient `xml:"ingredients>ingredient" json:ingredients`
+	Preparation []string     `xml:"preparation>step" json:"preparation"` // TODO saving order of steps
 }
 
 type Ingredient struct {
-	Name   string  `xml:",chardata"`
-	Amount float64 `xml:"amount,attr"`
-	Unit   string  `xml:"unit,attr"`
+	Name   string  `xml:",chardata" json:"name"`
+	Amount float64 `xml:"amount,attr" json:"amount"`
+	Unit   string  `xml:"unit,attr" json:"unit"`
 }
 
 func (ingredient Ingredient) getAmountUnit() string {
