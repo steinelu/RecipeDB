@@ -55,7 +55,11 @@ func (index *Index) add(term string, id string){
 		val := string(indexBucket.Get(key))
 		list := StringHeap(strings.Split(val, index.Seperator()))
 		heap.Init(&list)
-		heap.Push(&list, id)
+
+		if !heapContaines(&list, id){
+			heap.Push(&list, id)
+		}
+
 		err = indexBucket.Put(key, []byte(strings.Join(list, index.Seperator())))
 		if err != nil {
 			return err
@@ -126,6 +130,25 @@ func (h *StringHeap) Pop() interface{} {
 	x := old[n-1]
 	*h = old[0 : n-1]
 	return x
+}
+
+func heapContaines(heap *StringHeap, item string) bool{
+	h := []string(*heap)
+	l := len(h)
+	return binarySearch(h, 0, l, item)
+}
+
+func binarySearch(list []string, start int, end int, item string) bool{
+	if end <= start{
+		return false
+	}
+	m := (start + end) / 2
+	if item < list[m] {
+		return binarySearch(list, start, m - 1, item)
+	} else if item > list[m] {
+		return binarySearch(list, m + 1, end, item)
+	}
+	return true
 }
 
 func intersect(one []string, two []string) []string {
