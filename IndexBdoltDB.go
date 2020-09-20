@@ -12,14 +12,12 @@ type Index struct {
 	path string
 	db *bolt.DB
 	recipes DataBase
-	sep string
 	bucketName string
 }
 
 func (index *Index) Init(recipeDB DataBase){
 	index.recipes = recipeDB
 	index.bucketName = "Index"
-	index.sep = ";"
 
 	db, err := bolt.Open("./tmp/test_index.db", 0600, nil)
 	if err != nil {
@@ -32,6 +30,10 @@ func (index *Index) Init(recipeDB DataBase){
 	})
 	index.db = db
 
+}
+
+func (index Index) Seperator() string{
+	return ";"
 }
 
 func (index *Index) Index(recipe Recipe){
@@ -51,10 +53,10 @@ func (index *Index) add(term string, id string){
 		}
 
 		val := string(indexBucket.Get(key))
-		list := StringHeap(strings.Split(val, index.sep))
+		list := StringHeap(strings.Split(val, index.Seperator()))
 		heap.Init(&list)
 		heap.Push(&list, id)
-		err = indexBucket.Put(key, []byte(strings.Join(list, index.sep)))
+		err = indexBucket.Put(key, []byte(strings.Join(list, index.Seperator())))
 		if err != nil {
 			return err
 		}
@@ -82,7 +84,7 @@ func (index *Index)get(term string) []string {
 		log.Fatal(err)
 	}
 	// TODO fast enought?
-	s := strings.Split(string(val), index.sep)
+	s := strings.Split(string(val), index.Seperator())
 	// first item is always empty, because of empty get in get
 	return s[1:]
 }
@@ -145,7 +147,7 @@ func intersect(one []string, two []string) []string {
 	}
 	intersection := StringHeap{}
 	for i, j := 0, 0; i < len(one) && j < len(two); {
-		if string(one[i]) < string(two[j]) {
+		if one[i] < two[j] {
 			i++
 		} else if one[i] > two[j] {
 			j++

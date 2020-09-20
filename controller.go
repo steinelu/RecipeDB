@@ -35,33 +35,19 @@ func main() {
 	setDefaultPath()
 	getOptions()
 
-	//fmt.Println(arguments.path, len(arguments.path))
 	var db = boltdb{path: *path}
 	var se = Index{}
 
 	db.Init()
 	se.Init(&db)
 
-	if len(flag.Args()) > 0 { // searching
-		fmt.Println("Searching ...")
-		res := se.Search(flag.Args())
-		handleSearchResults(res)
-	} else if len(*adding) > 0 {
-		fmt.Println("Adding new recipe ...")
-		file, err := os.Open(*adding)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		content, err := ioutil.ReadAll(file)
-		if err != nil {
-			handleError(err)
-		}
-
-		recipe := UnmarschalXMLRecipe(content)
-
+	if len(*adding) > 0 {
+		recipe := getFileContent(*adding)
 		db.Add(recipe)
 		se.Index(recipe)
+	} else if len(flag.Args()) > 0 { // Searching
+		res := se.Search(flag.Args())
+		handleSearchResults(res)
 	} else {
 		fmt.Println("Dry run ...")
 	}
@@ -80,4 +66,17 @@ func handleSearchResults(recipes <-chan Recipe) {
 			fmt.Println(recipe.GetId(), ": ", recipe.Title)
 		}
 	}
+}
+
+func getFileContent(path string) Recipe{
+	file, err := os.Open(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	content, err := ioutil.ReadAll(file)
+	if err != nil {
+		handleError(err)
+	}
+	return UnmarschalXMLRecipe(content)
 }
