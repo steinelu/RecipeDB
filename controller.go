@@ -37,27 +37,37 @@ func main() {
 
 	//fmt.Println(arguments.path, len(arguments.path))
 	var db = boltdb{path: *path}
-	var se = InvertedIndexInMemory{}
+	var se = Index{}
 
 	db.Init()
-
+	se.Init(&db)
 
 	if len(flag.Args()) > 0 { // searching
-		se.Index(&db)
+		fmt.Println("Searching ...")
 		res := se.Search(flag.Args())
 		handleSearchResults(res)
 	} else if len(*adding) > 0 {
+		fmt.Println("Adding new recipe ...")
 		file, err := os.Open(*adding)
 		if err != nil {
 			log.Fatal(err)
 		}
-		content, err := ioutil.ReadAll(file)
 
+		content, err := ioutil.ReadAll(file)
 		if err != nil {
 			handleError(err)
 		}
-		db.Add(UnmarschalXMLRecipe(content))
+
+		recipe := UnmarschalXMLRecipe(content)
+
+		db.Add(recipe)
+		se.Index(recipe)
+	} else {
+		fmt.Println("Dry run ...")
 	}
+
+	db.Close()
+	se.Close()
 }
 
 func handleSearchResults(recipes <-chan Recipe) {
@@ -67,7 +77,7 @@ func handleSearchResults(recipes <-chan Recipe) {
 		} else if *cli {
 			fmt.Println(recipe.toCLIString())
 		} else {
-			fmt.Println(recipe.GetId(), ":", recipe.Title)
+			fmt.Println(recipe.GetId(), ": ", recipe.Title)
 		}
 	}
 }

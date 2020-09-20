@@ -15,14 +15,16 @@ func handleError(err error) {
 }
 
 type SearchEngine interface {
-	Index(DataBase)
+	Init(*DataBase)
 	Search([]string) <-chan Recipe
+	Index(Recipe)
+	Close()
 }
 
 type DataBase interface {
 	Init()
 	Add(Recipe)
-	Iterator(func(Recipe, []byte))
+	//Iterator(func(Recipe, []byte))
 	Get([]string) <-chan Recipe
 	Close()
 }

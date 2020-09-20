@@ -71,7 +71,6 @@ func (db *boltdb) Add(recipe Recipe){
 	if err != nil {
 		log.Fatal(err)
 	}
-
 }
 
 func (db *boltdb) Get(keys []string) <- chan Recipe{
@@ -100,7 +99,6 @@ func (db *boltdb) get(key []byte) Recipe{
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	return UnmarschalXMLRecipe(val)
 }
 
