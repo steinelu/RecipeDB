@@ -11,16 +11,15 @@ import (
 	"strings"
 )
 
-var markdown *bool
-var cli *bool
+var output *string
 var dbPath *string
 var add *string
 var bulkload *string
 
 func getOptions() {
 	dbPath = flag.String("path", os.Getenv("RECIPE"), "path to recipe <RECIPE> database")
-	markdown = flag.Bool("md", false, "outputs recipe as MarkDown into stdout")
-	cli = flag.Bool("cli", false, "outputs recipe as string into stdout")
+
+	output = flag.String("o", "default", "how should the search results be represented {xml, json, md, default}")
 	//adding = flag.Bool("add-xml", false, "adding an recipe via a pipe!")
 	add = flag.String("add", "", "path to recipe file")
 	bulkload = flag.String("load", "", "path to directory with xml/json files")
@@ -64,11 +63,13 @@ func main() {
 
 func handleSearchResults(recipes <-chan Recipe) {
 	for recipe := range recipes {
-		if *markdown {
+		if *output == "xml" {
+			fmt.Println(string(MarschalXMLRecipe(recipe)))
+		} else if *output == "json"{
+			fmt.Println(string(MarschalJSONRecipe(recipe)))
+		} else if *output == "md"{
 			fmt.Println(recipe.toMarkdown())
-		} else if *cli {
-			fmt.Println(recipe.toCLIString())
-		} else {
+		} else if *output == "default"{
 			fmt.Println(recipe.GetId(), ": ", recipe.Title)
 		}
 	}

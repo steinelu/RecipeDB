@@ -33,7 +33,7 @@ type Recipe struct {
 	//filename    string
 	Source 		string		 `xml:"href,attr" json:"href"`
 	Title       string       `xml:"title" json:"title"`
-	Ingredients []Ingredient `xml:"ingredients>ingredient" json:ingredients`
+	Ingredients []Ingredient `xml:"ingredients>ingredient" json:"ingredients""`
 	Preparation []string     `xml:"preparation>step" json:"preparation"` // TODO saving order of steps
 }
 

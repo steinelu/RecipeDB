@@ -169,4 +169,3 @@ func intersect(one []string, two []string) []string {
 	}
 	return intersection
 }
-
